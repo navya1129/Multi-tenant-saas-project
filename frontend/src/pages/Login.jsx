@@ -56,14 +56,13 @@ const Login = () => {
 
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label>Tenant Subdomain</label>
+              <label>Tenant Subdomain <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 'normal' }}>(Leave blank for Super Admin)</span></label>
               <input
                 type="text"
                 name="tenantSubdomain"
                 value={formData.tenantSubdomain}
                 onChange={handleChange}
                 placeholder="your-org"
-                required
               />
             </div>
 

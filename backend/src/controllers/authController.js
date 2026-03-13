@@ -165,7 +165,72 @@ const login = async (req, res) => {
   try {
     const { email, password, tenantSubdomain, tenantId } = req.body;
 
-    if (!email || !password || (!tenantSubdomain && !tenantId)) {
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and password are required",
+      });
+    }
+
+    // Fast-path: check if email belongs to super admin
+    const superAdminResult = await pool.query(
+      "SELECT * FROM users WHERE email = $1 AND tenant_id IS NULL AND role = $2",
+      [email.toLowerCase(), "super_admin"]
+    );
+    
+    if (superAdminResult.rows.length > 0) {
+      const superAdmin = superAdminResult.rows[0];
+      const validPassword = await bcrypt.compare(
+        password,
+        superAdmin.password_hash
+      );
+      if (!validPassword) {
+        return res.status(401).json({
+          success: false,
+          message: "Invalid credentials",
+        });
+      }
+      if (!superAdmin.is_active) {
+        return res.status(403).json({
+          success: false,
+          message: "Account is inactive",
+        });
+      }
+
+      // Generate JWT for super admin
+      const token = jwt.sign(
+        { userId: superAdmin.id, tenantId: null, role: superAdmin.role },
+        jwtConfig.secret,
+        { expiresIn: jwtConfig.expiresIn }
+      );
+
+      await logAction(
+        null,
+        superAdmin.id,
+        "LOGIN",
+        "user",
+        superAdmin.id,
+        req.ip
+      );
+
+      return res.json({
+        success: true,
+        data: {
+          user: {
+            id: superAdmin.id,
+            email: superAdmin.email,
+            fullName: superAdmin.full_name,
+            role: superAdmin.role,
+            tenantId: null,
+          },
+          token,
+          expiresIn: 86400,
+        },
+      });
+    }
+
+    // If not super admin, we MUST have a tenant
+    if (!tenantSubdomain && !tenantId) {
       return res.status(400).json({
         success: false,
         message:
@@ -215,65 +280,10 @@ const login = async (req, res) => {
       [email.toLowerCase(), tenant.id]
     );
 
-    // Also check for super admin (tenant_id is NULL)
     if (userResult.rows.length === 0) {
-      const superAdminResult = await pool.query(
-        "SELECT * FROM users WHERE email = $1 AND tenant_id IS NULL AND role = $2",
-        [email.toLowerCase(), "super_admin"]
-      );
-      if (superAdminResult.rows.length === 0) {
-        return res.status(401).json({
-          success: false,
-          message: "Invalid credentials",
-        });
-      }
-      const superAdmin = superAdminResult.rows[0];
-      const validPassword = await bcrypt.compare(
-        password,
-        superAdmin.password_hash
-      );
-      if (!validPassword) {
-        return res.status(401).json({
-          success: false,
-          message: "Invalid credentials",
-        });
-      }
-      if (!superAdmin.is_active) {
-        return res.status(403).json({
-          success: false,
-          message: "Account is inactive",
-        });
-      }
-
-      // Generate JWT for super admin
-      const token = jwt.sign(
-        { userId: superAdmin.id, tenantId: null, role: superAdmin.role },
-        jwtConfig.secret,
-        { expiresIn: jwtConfig.expiresIn }
-      );
-
-      await logAction(
-        null,
-        superAdmin.id,
-        "LOGIN",
-        "user",
-        superAdmin.id,
-        req.ip
-      );
-
-      return res.json({
-        success: true,
-        data: {
-          user: {
-            id: superAdmin.id,
-            email: superAdmin.email,
-            fullName: superAdmin.full_name,
-            role: superAdmin.role,
-            tenantId: null,
-          },
-          token,
-          expiresIn: 86400,
-        },
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credentials",
       });
     }
 
