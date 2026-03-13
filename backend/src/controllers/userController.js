@@ -2,6 +2,7 @@ const bcrypt = require('bcrypt');
 const { v4: uuidv4 } = require('uuid');
 const pool = require('../config/database');
 const { logAction } = require('../utils/auditLogger');
+const { sendInvitationEmail } = require('../utils/emailService');
 
 // API 8: Add User to Tenant
 const addUser = async (req, res) => {
@@ -86,11 +87,24 @@ const addUser = async (req, res) => {
     // Create user
     const userId = uuidv4();
     await pool.query(
-      'INSERT INTO users (id, tenant_id, email, password_hash, full_name, role, is_active) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-      [userId, tenantId, email.toLowerCase(), passwordHash, fullName, role, true]
+      'INSERT INTO users (id, tenant_id, email, password_hash, full_name, role, is_active, invitation_status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+      [userId, tenantId, email.toLowerCase(), passwordHash, fullName, role, false, 'pending']
     );
     
     await logAction(tenantId, req.user.id, 'CREATE_USER', 'user', userId, req.ip);
+
+    // Send invitation email in the background
+    try {
+      const tenantNameResult = await pool.query('SELECT name FROM tenants WHERE id = $1', [tenantId]);
+      const tenantName = tenantNameResult.rows[0]?.name || 'Workspace';
+      const acceptLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/mock-email/${userId}`;
+      
+      sendInvitationEmail(email.toLowerCase(), fullName, tenantName, password, acceptLink).catch(err => {
+        console.error('Non-critical: Failed to send invitation email', err);
+      });
+    } catch (e) {
+      console.error('Error fetching tenant for email:', e);
+    }
     
     res.status(201).json({
       success: true,
@@ -134,12 +148,12 @@ const listUsers = async (req, res) => {
     const role = req.query.role;
     
     // Build query
-    let query = 'SELECT id, email, full_name, role, is_active, created_at FROM users WHERE tenant_id = $1';
+    let query = 'SELECT id, email, full_name, role, is_active, invitation_status, created_at FROM users WHERE tenant_id = $1';
     const queryParams = [tenantId];
     let paramCount = 2;
     
     if (search) {
-      query += ` AND (full_name ILIKE $${paramCount} OR email ILIKE $${paramCount})`;
+      query += ` AND (full_name LIKE $${paramCount} OR email LIKE $${paramCount})`;
       queryParams.push(`%${search}%`);
       paramCount++;
     }
@@ -150,7 +164,7 @@ const listUsers = async (req, res) => {
     }
     
     // Get total count
-    const countQuery = query.replace('SELECT id, email, full_name, role, is_active, created_at', 'SELECT COUNT(*) as count');
+    const countQuery = query.replace('SELECT id, email, full_name, role, is_active, invitation_status, created_at', 'SELECT COUNT(*) as count');
     const countResult = await pool.query(countQuery, queryParams);
     const total = parseInt(countResult.rows[0].count);
     
@@ -169,6 +183,7 @@ const listUsers = async (req, res) => {
           fullName: user.full_name,
           role: user.role,
           isActive: user.is_active,
+          invitationStatus: user.invitation_status,
           createdAt: user.created_at
         })),
         total,
@@ -368,10 +383,41 @@ const deleteUser = async (req, res) => {
   }
 };
 
+// API 12: Accept Invitation
+const acceptInvite = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    // Note: In a production app you would verify a secure token rather than just the userId.
+    const userResult = await pool.query(
+      'SELECT id, is_active FROM users WHERE id = $1',
+      [userId]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Invalid invitation link' });
+    }
+
+    await pool.query(
+      "UPDATE users SET is_active = true, invitation_status = 'accepted' WHERE id = $1",
+      [userId]
+    );
+
+    res.json({
+      success: true,
+      message: 'Invitation accepted successfully'
+    });
+  } catch (error) {
+    console.error('Accept invite error:', error);
+    res.status(500).json({ success: false, message: 'Failed to accept invitation' });
+  }
+};
+
 module.exports = {
   addUser,
   listUsers,
   updateUser,
-  deleteUser
+  deleteUser,
+  acceptInvite
 };
 

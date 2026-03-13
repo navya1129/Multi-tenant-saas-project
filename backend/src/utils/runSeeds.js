@@ -20,7 +20,7 @@ async function runSeeds() {
     await client.query(
       `INSERT INTO users (id, tenant_id, email, password_hash, full_name, role, is_active) 
        VALUES ($1, NULL, $2, $3, $4, $5, $6)
-       ON CONFLICT DO NOTHING`,
+       ON CONFLICT(id) DO NOTHING`,
       ['00000000-0000-0000-0000-000000000001', 'superadmin@system.com', superAdminHash, 'Super Admin', 'super_admin', true]
     );
     
@@ -36,7 +36,7 @@ async function runSeeds() {
     await client.query(
       `INSERT INTO users (id, tenant_id, email, password_hash, full_name, role, is_active) 
        VALUES ($1, $2, $3, $4, $5, $6, $7)
-       ON CONFLICT DO NOTHING`,
+       ON CONFLICT(id) DO NOTHING`,
       ['20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', 'admin@demo.com', demoAdminHash, 'Demo Admin', 'tenant_admin', true]
     );
     
@@ -44,7 +44,7 @@ async function runSeeds() {
     await client.query(
       `INSERT INTO users (id, tenant_id, email, password_hash, full_name, role, is_active) 
        VALUES ($1, $2, $3, $4, $5, $6, $7), ($8, $9, $10, $11, $12, $13, $14)
-       ON CONFLICT DO NOTHING`,
+       ON CONFLICT(id) DO NOTHING`,
       [
         '30000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', 'user1@demo.com', userHash, 'User One', 'user', true,
         '30000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000001', 'user2@demo.com', userHash, 'User Two', 'user', true
@@ -55,7 +55,7 @@ async function runSeeds() {
     await client.query(
       `INSERT INTO projects (id, tenant_id, name, description, status, created_by) 
        VALUES ($1, $2, $3, $4, $5, $6), ($7, $8, $9, $10, $11, $12)
-       ON CONFLICT DO NOTHING`,
+       ON CONFLICT(id) DO NOTHING`,
       [
         '40000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', 'Project Alpha', 'First demo project', 'active', '20000000-0000-0000-0000-000000000001',
         '40000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000001', 'Project Beta', 'Second demo project', 'active', '20000000-0000-0000-0000-000000000001'
@@ -66,7 +66,7 @@ async function runSeeds() {
     await client.query(
       `INSERT INTO tasks (id, project_id, tenant_id, title, description, status, priority, assigned_to, due_date) 
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9), ($10, $11, $12, $13, $14, $15, $16, $17, $18), ($19, $20, $21, $22, $23, $24, $25, $26, $27), ($28, $29, $30, $31, $32, $33, $34, $35, $36), ($37, $38, $39, $40, $41, $42, $43, $44, $45)
-       ON CONFLICT DO NOTHING`,
+       ON CONFLICT(id) DO NOTHING`,
       [
         '50000000-0000-0000-0000-000000000001', '40000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', 'Design homepage', 'Create homepage design mockup', 'todo', 'high', '30000000-0000-0000-0000-000000000001', '2024-12-31',
         '50000000-0000-0000-0000-000000000002', '40000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', 'Implement API', 'Build REST API endpoints', 'in_progress', 'medium', '30000000-0000-0000-0000-000000000002', '2024-12-25',

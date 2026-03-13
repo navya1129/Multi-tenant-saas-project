@@ -11,6 +11,7 @@ import Dashboard from './pages/Dashboard';
 import Projects from './pages/Projects';
 import ProjectDetails from './pages/ProjectDetails';
 import Users from './pages/Users';
+import MockEmail from './pages/MockEmail';
 
 function App() {
   return (
@@ -53,6 +54,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route path="/mock-email/:userId" element={<MockEmail />} />
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </div>

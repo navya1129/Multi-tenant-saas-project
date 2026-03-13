@@ -1,9 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const { addUser, listUsers, updateUser, deleteUser } = require('../controllers/userController');
+const { addUser, listUsers, updateUser, deleteUser, acceptInvite } = require('../controllers/userController');
 const { authenticate, authorize } = require('../middleware/auth');
 
-// All routes require authentication
+// Public routes
+router.get('/accept-invite/:userId', acceptInvite);
+
+// All other routes require authentication
 router.use(authenticate);
 
 // Routes for tenant-specific user operations (mounted at /api/tenants)

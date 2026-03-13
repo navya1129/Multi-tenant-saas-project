@@ -61,24 +61,42 @@ const Projects = () => {
   };
 
   if (loading) {
-    return <div className="container">Loading...</div>;
+    return (
+      <div className="container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
+        <div style={{ color: 'var(--text-secondary)' }}>Loading projects...</div>
+      </div>
+    );
   }
 
   return (
     <div className="container">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h1>Projects</h1>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+        <div>
+          <h1 style={{ marginBottom: '0.25rem' }}>Projects</h1>
+          <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Manage your organization's projects here.</p>
+        </div>
         <button className="btn btn-primary" onClick={() => { setEditingProject(null); setFormData({ name: '', description: '', status: 'active' }); setShowModal(true); }}>
-          Create New Project
+          + New Project
         </button>
       </div>
 
-      {error && <div className="error">{error}</div>}
+      {error && <div className="error" style={{ marginBottom: '1.5rem', padding: '0.75rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', borderRadius: '0.5rem', border: '1px solid rgba(239, 68, 68, 0.2)' }}>{error}</div>}
 
-      <div style={{ marginBottom: '20px' }}>
-        <label>Filter by Status: </label>
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={{ padding: '5px', marginLeft: '10px' }}>
-          <option value="">All</option>
+      <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <label style={{ fontWeight: 500, color: 'var(--text-secondary)' }}>Filter by Status:</label>
+        <select 
+          value={statusFilter} 
+          onChange={(e) => setStatusFilter(e.target.value)} 
+          style={{ 
+            padding: '0.5rem 1rem', 
+            borderRadius: 'var(--radius-md)',
+            border: '1px solid var(--border-color)',
+            backgroundColor: 'var(--surface-color)',
+            outline: 'none',
+            minWidth: '150px'
+          }}
+        >
+          <option value="">All Projects</option>
           <option value="active">Active</option>
           <option value="archived">Archived</option>
           <option value="completed">Completed</option>
@@ -86,32 +104,48 @@ const Projects = () => {
       </div>
 
       {projects.length === 0 ? (
-        <div className="card">
-          <p>No projects found. Create your first project!</p>
+        <div className="card" style={{ padding: '4rem 2rem', textAlign: 'center' }}>
+          <h3 style={{ color: 'var(--text-primary)', marginBottom: '0.5rem' }}>No projects found</h3>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>Get started by creating your first project.</p>
+          <button className="btn btn-primary" onClick={() => { setEditingProject(null); setFormData({ name: '', description: '', status: 'active' }); setShowModal(true); }}>
+            Create Project
+          </button>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
           {projects.map(project => (
-            <div key={project.id} className="card">
-              <h3>{project.name}</h3>
-              <p style={{ color: '#666', marginBottom: '10px' }}>{project.description || 'No description'}</p>
-              <div style={{ marginBottom: '10px' }}>
-                <span className={`badge badge-${project.status === 'active' ? 'success' : 'warning'}`}>
+            <div key={project.id} className="card" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                <h3 style={{ margin: 0, fontSize: '1.125rem', paddingRight: '1rem' }}>{project.name}</h3>
+                <span className={`badge badge-${project.status === 'active' ? 'success' : project.status === 'completed' ? 'info' : 'warning'}`}>
                   {project.status}
                 </span>
               </div>
-              <p style={{ fontSize: '14px', color: '#666' }}>
-                Tasks: {project.taskCount} | Completed: {project.completedTaskCount}
+              
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', flex: 1, marginBottom: '1.5rem', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                {project.description || 'No description provided.'}
               </p>
-              <p style={{ fontSize: '12px', color: '#999' }}>
-                Created: {new Date(project.createdAt).toLocaleDateString()}
-              </p>
-              <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
-                <Link to={`/projects/${project.id}`} className="btn btn-primary" style={{ flex: 1, textAlign: 'center', textDecoration: 'none' }}>
-                  View
-                </Link>
-                <button className="btn btn-secondary" onClick={() => handleEdit(project)}>Edit</button>
-                <button className="btn btn-danger" onClick={() => handleDelete(project.id)}>Delete</button>
+              
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '1rem', paddingBottom: '1rem', borderBottom: '1px solid var(--border-color)' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path></svg>
+                    {project.completedTaskCount} / {project.taskCount} Tasks
+                  </span>
+                  <span>{new Date(project.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                </div>
+                
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <Link to={`/projects/${project.id}`} className="btn btn-primary" style={{ flex: 1 }}>
+                    View Details
+                  </Link>
+                  <button className="btn btn-secondary" onClick={() => handleEdit(project)} title="Edit">
+                    Edit
+                  </button>
+                  <button className="btn btn-danger" style={{ padding: '0.625rem' }} onClick={() => handleDelete(project.id)} title="Delete">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"></path></svg>
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -132,6 +166,7 @@ const Projects = () => {
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="E.g., Website Redesign"
                   required
                 />
               </div>
@@ -141,6 +176,7 @@ const Projects = () => {
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows="4"
+                  placeholder="Brief description of the project goals..."
                 />
               </div>
               <div className="form-group">
@@ -154,9 +190,9 @@ const Projects = () => {
                   <option value="completed">Completed</option>
                 </select>
               </div>
-              <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-                <button type="submit" className="btn btn-primary">Save</button>
-                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+                <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>Save Project</button>
+                <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setShowModal(false)}>Cancel</button>
               </div>
             </form>
           </div>

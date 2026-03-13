@@ -1,68 +1,53 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-
 const api = axios.create({
-  baseURL: API_URL,
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
   headers: {
-    'Content-Type': 'application/json',
-  },
+    'Content-Type': 'application/json'
+  }
 });
 
-// Add token to requests
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
+// Request interceptor to add auth token
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
-);
-
-// Handle 401 errors (unauthorized)
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
-    }
-    return Promise.reject(error);
-  }
-);
+  return config;
+});
 
 // Auth APIs
 export const authAPI = {
-  registerTenant: (data) => api.post('/auth/register-tenant', data),
   login: (data) => api.post('/auth/login', data),
+  registerTenant: (data) => api.post('/auth/register-tenant', data),
   getCurrentUser: () => api.get('/auth/me'),
-  logout: () => api.post('/auth/logout'),
+  logout: () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+  }
 };
 
 // Tenant APIs
 export const tenantAPI = {
-  getTenant: (tenantId) => api.get(`/tenants/${tenantId}`),
-  updateTenant: (tenantId, data) => api.put(`/tenants/${tenantId}`, data),
-  listTenants: (params) => api.get('/tenants', { params }),
+  getTenant: (id) => api.get(`/tenants/${id || 'me'}`),
+  updateTenant: (id, data) => api.put(`/tenants/${id}`, data),
+  listTenants: () => api.get('/tenants'),
 };
 
 // User APIs
 export const userAPI = {
   addUser: (tenantId, data) => api.post(`/tenants/${tenantId}/users`, data),
-  listUsers: (tenantId, params) => api.get(`/tenants/${tenantId}/users`, { params }),
+  listUsers: (tenantId) => api.get(`/tenants/${tenantId}/users`),
   updateUser: (userId, data) => api.put(`/users/${userId}`, data),
   deleteUser: (userId) => api.delete(`/users/${userId}`),
+  acceptInvite: (userId) => api.get(`/users/accept-invite/${userId}`),
 };
 
 // Project APIs
 export const projectAPI = {
   createProject: (data) => api.post('/projects', data),
   listProjects: (params) => api.get('/projects', { params }),
+  getProject: (projectId) => api.get(`/projects/${projectId}`),
   updateProject: (projectId, data) => api.put(`/projects/${projectId}`, data),
   deleteProject: (projectId) => api.delete(`/projects/${projectId}`),
 };
@@ -73,7 +58,7 @@ export const taskAPI = {
   listTasks: (projectId, params) => api.get(`/projects/${projectId}/tasks`, { params }),
   updateTaskStatus: (taskId, status) => api.patch(`/tasks/${taskId}/status`, { status }),
   updateTask: (taskId, data) => api.put(`/tasks/${taskId}`, data),
+  deleteTask: (taskId) => api.delete(`/tasks/${taskId}`),
 };
 
 export default api;
-

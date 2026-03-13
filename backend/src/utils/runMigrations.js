@@ -11,7 +11,7 @@ async function runMigrations() {
     // Try Docker path first (../database/migrations), then local path (../../database/migrations)
     let migrationsDir = path.join(__dirname, '../database/migrations');
     if (!fs.existsSync(migrationsDir)) {
-      migrationsDir = path.join(__dirname, '../../database/migrations');
+      migrationsDir = path.join(__dirname, '../../../database/migrations');
     }
     const files = fs.readdirSync(migrationsDir)
       .filter(file => file.endsWith('.sql'))

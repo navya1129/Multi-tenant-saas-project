@@ -84,100 +84,155 @@ const ProjectDetails = () => {
       description: task.description || '',
       priority: task.priority,
       assignedTo: task.assignedTo?.id || '',
-      dueDate: task.dueDate || '',
+      dueDate: task.dueDate ? task.dueDate.substring(0, 10) : '',
     });
     setShowTaskModal(true);
   };
 
   if (loading) {
-    return <div className="container">Loading...</div>;
+    return (
+      <div className="container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
+        <div style={{ color: 'var(--text-secondary)' }}>Loading project details...</div>
+      </div>
+    );
   }
 
   if (error && !project) {
-    return <div className="container"><div className="error">{error}</div></div>;
+    return <div className="container"><div className="error" style={{ padding: '1rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', borderRadius: 'var(--radius-md)' }}>{error}</div></div>;
   }
 
   return (
     <div className="container">
-      <button className="btn btn-secondary" onClick={() => navigate('/projects')} style={{ marginBottom: '20px' }}>
-        ← Back to Projects
+      <button 
+        className="btn btn-secondary" 
+        onClick={() => navigate('/projects')} 
+        style={{ marginBottom: '1.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', border: 'none', background: 'transparent', padding: '0.5rem 0', color: 'var(--text-secondary)' }}
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg>
+        Back to Projects
       </button>
 
       {project && (
         <>
-          <div className="card" style={{ marginBottom: '20px' }}>
-            <h1>{project.name}</h1>
-            <p style={{ color: '#666', marginBottom: '10px' }}>{project.description || 'No description'}</p>
-            <div>
-              <span className={`badge badge-${project.status === 'active' ? 'success' : 'warning'}`}>
-                {project.status}
+          <div className="card" style={{ marginBottom: '2rem', borderTop: '4px solid var(--primary)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <h1 style={{ marginBottom: '0.5rem', fontSize: '2rem' }}>{project.name}</h1>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', maxWidth: '800px', lineHeight: '1.6' }}>{project.description || 'No description available for this project.'}</p>
+              </div>
+              <span className={`badge badge-${project.status === 'active' ? 'success' : project.status === 'completed' ? 'info' : 'warning'}`} style={{ fontSize: '0.875rem', padding: '0.375rem 1rem' }}>
+                {project.status.toUpperCase()}
               </span>
             </div>
           </div>
 
-          <div className="card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h2>Tasks</h2>
-              <button className="btn btn-primary" onClick={() => { setEditingTask(null); setTaskFormData({ title: '', description: '', priority: 'medium', assignedTo: '', dueDate: '' }); setShowTaskModal(true); }}>
-                Add Task
-              </button>
-            </div>
-
-            <div style={{ marginBottom: '20px' }}>
-              <label>Filter by Status: </label>
-              <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={{ padding: '5px', marginLeft: '10px' }}>
-                <option value="">All</option>
-                <option value="todo">Todo</option>
-                <option value="in_progress">In Progress</option>
-                <option value="completed">Completed</option>
-              </select>
+          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.5rem', borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--surface-color)' }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: '1.25rem' }}>Project Tasks</h2>
+                <p style={{ margin: '0.25rem 0 0 0', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Manage and track all tasks for this project.</p>
+              </div>
+              <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                <select 
+                  value={statusFilter} 
+                  onChange={(e) => setStatusFilter(e.target.value)} 
+                  style={{ 
+                    padding: '0.5rem', 
+                    borderRadius: 'var(--radius-md)', 
+                    border: '1px solid var(--border-color)',
+                    backgroundColor: 'var(--bg-color)',
+                    outline: 'none'
+                  }}
+                >
+                  <option value="">All Statuses</option>
+                  <option value="todo">To Do</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="completed">Completed</option>
+                </select>
+                <button className="btn btn-primary" onClick={() => { setEditingTask(null); setTaskFormData({ title: '', description: '', priority: 'medium', assignedTo: '', dueDate: '' }); setShowTaskModal(true); }}>
+                  + Add Task
+                </button>
+              </div>
             </div>
 
             {tasks.length === 0 ? (
-              <p>No tasks yet. Create your first task!</p>
+              <div style={{ padding: '4rem', textAlign: 'center' }}>
+                <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem' }}>No tasks found for this project.</p>
+                <button className="btn btn-primary" onClick={() => { setEditingTask(null); setTaskFormData({ title: '', description: '', priority: 'medium', assignedTo: '', dueDate: '' }); setShowTaskModal(true); }}>
+                  Create First Task
+                </button>
+              </div>
             ) : (
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>Title</th>
-                    <th>Priority</th>
-                    <th>Status</th>
-                    <th>Assigned To</th>
-                    <th>Due Date</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {tasks.map(task => (
-                    <tr key={task.id}>
-                      <td>{task.title}</td>
-                      <td>
-                        <span className={`badge badge-${task.priority === 'high' ? 'danger' : task.priority === 'medium' ? 'warning' : 'info'}`}>
-                          {task.priority}
-                        </span>
-                      </td>
-                      <td>
-                        <select
-                          value={task.status}
-                          onChange={(e) => handleTaskStatusChange(task.id, e.target.value)}
-                          style={{ padding: '4px', fontSize: '12px' }}
-                        >
-                          <option value="todo">Todo</option>
-                          <option value="in_progress">In Progress</option>
-                          <option value="completed">Completed</option>
-                        </select>
-                      </td>
-                      <td>{task.assignedTo ? task.assignedTo.fullName : 'Unassigned'}</td>
-                      <td>{task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'N/A'}</td>
-                      <td>
-                        <button className="btn btn-secondary" onClick={() => handleEditTask(task)} style={{ padding: '5px 10px', fontSize: '12px' }}>
-                          Edit
-                        </button>
-                      </td>
+              <div className="table-container" style={{ border: 'none', borderRadius: 0 }}>
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: '40%' }}>Task Details</th>
+                      <th>Priority</th>
+                      <th>Status</th>
+                      <th>Assignee</th>
+                      <th>Due Date</th>
+                      <th style={{ textAlign: 'right' }}>Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {tasks.map(task => (
+                      <tr key={task.id}>
+                        <td>
+                          <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.25rem' }}>{task.title}</div>
+                          {task.description && <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{task.description}</div>}
+                        </td>
+                        <td>
+                          <span className={`badge badge-${task.priority === 'high' ? 'danger' : task.priority === 'medium' ? 'warning' : 'info'}`}>
+                            {task.priority || 'medium'}
+                          </span>
+                        </td>
+                        <td>
+                          <select
+                            value={task.status}
+                            onChange={(e) => handleTaskStatusChange(task.id, e.target.value)}
+                            style={{ 
+                              padding: '0.25rem 0.5rem', 
+                              fontSize: '0.75rem', 
+                              borderRadius: 'var(--radius-md)', 
+                              border: '1px solid var(--border-color)',
+                              backgroundColor: 'transparent',
+                              fontWeight: 500,
+                              color: task.status === 'completed' ? 'var(--success)' : task.status === 'in_progress' ? 'var(--info)' : 'var(--text-primary)'
+                            }}
+                          >
+                            <option value="todo">To Do</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="completed">Completed</option>
+                          </select>
+                        </td>
+                        <td>
+                          {task.assignedTo ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                              <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: 'var(--bg-color)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.65rem', fontWeight: 'bold' }}>
+                                {task.assignedTo.fullName.charAt(0)}
+                              </div>
+                              <span style={{ fontSize: '0.875rem' }}>{task.assignedTo.fullName}</span>
+                            </div>
+                          ) : (
+                            <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', fontStyle: 'italic' }}>Unassigned</span>
+                          )}
+                        </td>
+                        <td>
+                          <span style={{ fontSize: '0.875rem', color: task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'completed' ? 'var(--danger)' : 'var(--text-secondary)' }}>
+                            {task.dueDate ? new Date(task.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '-'}
+                          </span>
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
+                          <button className="btn btn-secondary" onClick={() => handleEditTask(task)} style={{ padding: '0.375rem 0.75rem', fontSize: '0.75rem' }}>
+                            Edit
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
         </>
@@ -192,11 +247,12 @@ const ProjectDetails = () => {
             </div>
             <form onSubmit={handleTaskSubmit}>
               <div className="form-group">
-                <label>Title</label>
+                <label>Task Title</label>
                 <input
                   type="text"
                   value={taskFormData.title}
                   onChange={(e) => setTaskFormData({ ...taskFormData, title: e.target.value })}
+                  placeholder="E.g., Design database schema"
                   required
                 />
               </div>
@@ -206,30 +262,33 @@ const ProjectDetails = () => {
                   value={taskFormData.description}
                   onChange={(e) => setTaskFormData({ ...taskFormData, description: e.target.value })}
                   rows="4"
+                  placeholder="Detailed explanation of the task..."
                 />
               </div>
-              <div className="form-group">
-                <label>Priority</label>
-                <select
-                  value={taskFormData.priority}
-                  onChange={(e) => setTaskFormData({ ...taskFormData, priority: e.target.value })}
-                >
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                </select>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="form-group">
+                  <label>Priority</label>
+                  <select
+                    value={taskFormData.priority}
+                    onChange={(e) => setTaskFormData({ ...taskFormData, priority: e.target.value })}
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Due Date</label>
+                  <input
+                    type="date"
+                    value={taskFormData.dueDate}
+                    onChange={(e) => setTaskFormData({ ...taskFormData, dueDate: e.target.value })}
+                  />
+                </div>
               </div>
-              <div className="form-group">
-                <label>Due Date</label>
-                <input
-                  type="date"
-                  value={taskFormData.dueDate}
-                  onChange={(e) => setTaskFormData({ ...taskFormData, dueDate: e.target.value })}
-                />
-              </div>
-              <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-                <button type="submit" className="btn btn-primary">Save</button>
-                <button type="button" className="btn btn-secondary" onClick={() => setShowTaskModal(false)}>Cancel</button>
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+                <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>Save Task</button>
+                <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setShowTaskModal(false)}>Cancel</button>
               </div>
             </form>
           </div>
