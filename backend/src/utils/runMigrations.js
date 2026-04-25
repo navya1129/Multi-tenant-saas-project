@@ -9,10 +9,11 @@ async function runMigrations() {
     
     // Read migration files in order
     // Try Docker path first (../database/migrations), then local path (../../database/migrations)
-    let migrationsDir = path.join(__dirname, '../database/migrations');
-    if (!fs.existsSync(migrationsDir)) {
-      migrationsDir = path.join(__dirname, '../../../database/migrations');
-    }
+  let migrationsDir = path.join(__dirname, '../../database/migrations');
+
+if (!fs.existsSync(migrationsDir)) {
+  throw new Error(`Migrations folder not found at ${migrationsDir}`);
+}
     const files = fs.readdirSync(migrationsDir)
       .filter(file => file.endsWith('.sql'))
       .sort();
