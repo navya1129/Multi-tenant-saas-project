@@ -110,7 +110,7 @@ async function startServer() {
     
     // Run migrations
     console.log('Running database migrations...');
-    await runMigrations();
+    // await runMigrations();
     
     // Run seeds
     console.log('Loading seed data...');

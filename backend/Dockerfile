@@ -3,20 +3,16 @@ FROM node:18-alpine
 WORKDIR /app
 
 # Copy package files
-COPY backend/package*.json ./
+COPY package*.json ./
 
 # Install dependencies
 RUN npm install
 
-# Copy backend application code
-COPY backend/ .
+# Copy all backend code
+COPY . .
 
-# Copy database migrations and seeds
-COPY database ./database
-
-# Expose port
+# Expose backend port
 EXPOSE 5000
 
-# Start server (migrations and seeds run automatically in server.js)
+# Start backend server
 CMD ["node", "src/server.js"]
-
